@@ -1,0 +1,21 @@
+    mov rbx, 2 ;byte mover
+    mov rcx, 22
+    loop:
+        ;mov rbx, 222 ;rbx is our counter to 255
+        mov rax, rcx ;rcx is our number to ouput
+        mov rcx, 10 ;we want to divide rax by 10 and grab remainder from rdx
+        mov rdx, 0 ;reset rdx otherwise we get floating point exception
+        div rcx ;remainder is in rbx
+        mov rcx, rax ;store result into rcx then reset rax later
+        mov rax, num ;move string to rax
+        add rax, rbx ;add 2 to rax since we want to move over 2 bytes, read from end digit
+        mov al, [rax] ;move byte index value rax into al 8 bit register
+        add rax, rdx ;add rdx to rax since that is remainder
+        mov rsi, num ;move string into rsi
+        add rsi, rbx ;write at end digit
+        mov [rsi], al ;write byte
+        mov rax, rcx ;reset rax since we changed it
+        sub rbx, 1 ;decrement byte to change indice
+
+    sub rax, 0 ;if we run out of numbers terminate loop
+    jnz loop
