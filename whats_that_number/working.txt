@@ -1,0 +1,134 @@
+;amit bhandal 014172912
+
+section .data
+    binary db `b00000000\n`
+    hex db `x00\n`
+    decimal db `d000\n`
+
+section .text
+    global _start
+
+;CHANGE TO MAIN
+_start:
+    mov rcx, rsp ;move stack pointer into rcx
+    add rcx, 16  ;we want to go to inputed arg so we need to skip argc and argv
+    mov rbx, 0 ;result integer
+    mov rsi, 0 ;byte mover
+    mov rax, 10 ;multiplier
+    
+    convertToNum:
+        mov rdx, [rcx]
+        add rdx, rsi ;move byte over
+        mov al, [rdx]
+        sub al, 0
+        jz converted ;if null byte jump have built number
+        sub al, 48 ;convert to int
+        mov rdi, rax ;move current digit into rdi
+        mov rax, 10 ;multiplier
+        mul rbx ;product is in rax
+        add rax, rdi ;add current digit
+        mov rbx, rax ;move new number into rbx
+        add rsi, 1 ;move to next byte
+        jmp convertToNum  
+
+    converted:
+        mov rax, rbx ;move result into rax
+        mov rdx, 0 ;reset otherwise we get floating point exception
+
+    mov rdi, 8 ;rdi will be the position of the last bit in binary string
+
+    computeBinary:
+        mov rcx, 2 ;divide rax by 2
+        div rcx ;remainder is in rdx and that is the bit we want to set
+        mov rcx, rax ;cache rax
+        mov rsi, binary
+        add rsi, rdi ;move to correct position
+        mov al, [rsi] ;get current byte
+        add rax, rdx ;add remainder to current byte
+        mov rdx, 0 ;reset remainder otherwise we get floating point exception
+        mov [rsi], al ;write it
+        sub rdi, 1 ;decrement byte position
+        mov rax, rcx ;retrieve quotient
+        cmp rdi, 1 ;check if rdi >= 1
+        jge computeBinary ;if it is loop again
+
+    printBinary:
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, binary
+        mov rdx, 10
+        syscall
+
+    mov rdi, rbx ;move curr number into rdi
+    mov rcx, 2 ;current byte
+    mov rdx, 0 ;reset remainder
+     
+    computeHex:
+        mov rdx, 0 ;reset rdx otherwise we get floating point exception
+        mov rax, rdi ;move current number into rax
+        mov rsi, 16 ;need to divide rax by 16
+        div rsi ;quotient in rax, remainder in rdx
+        mov rdi, rax ;move quotient into rdi
+        mov rsi, hex ;get hex string
+        add rsi, rcx ;move to current byte
+        mov al, [rsi] ;move current byte into al
+        sub al, 48 ;byte at al is currently ascii so convert to int
+        add rax, rdx ;move to int value
+        sub rcx, 1 ;decrement
+        cmp rdx, 9 ;if current digit is > 9 we need to append a letter so jump to helper
+        jg addLetter
+        add al, 48 ;convert to ascii
+        mov [rsi], al ;write byte
+        cmp rcx, 0 ;if rcx > 0 keep jumping
+        jg computeHex
+
+
+    printHex:
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, hex
+        mov rdx, 4
+        syscall
+
+    ;print decimal is same as proj2
+    cmp rbx, 1000 ;base check, if num > 1000 just print 000 since we donn't have more than 3 digits
+    jge printDecimal
+    mov rdi, 3 ;byte mover
+    mov rax, rbx ;rbx is our number to ouput
+
+     computeDecimal:
+        mov rcx, 10 ;we want to divide rax by 10 and grab remainder from rdx
+        mov rdx, 0 ;reset rdx otherwise we get floating point exception if its already pointing to address
+        div rcx ;divide rax by 10 remainder is in rdx
+        mov rcx, rax ;store result into rcx then reset rax later
+        mov rax, decimal ;move string to rax
+        add rax, rdi ;add rdi to rax since we want to move over rdi bytes, read from end digit
+        mov al, [rax] ;move byte index value rax into al 8 bit register
+        add rax, rdx ;add rdx to rax since that is remainder
+        mov rsi, decimal ;move string into rsi
+        add rsi, rdi ;write at end digit, move over to byte to be changed
+        mov [rsi], al ;write byte
+        mov rax, rcx ;reset rax since we changed it
+        sub rdi, 1 ;decrement byte to change indice
+        cmp rdi, 0 ;if rdi > 0, (on a valid byte) iterate again
+        jg computeDecimal
+
+    printDecimal:
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, decimal
+        mov rdx, 5
+        syscall 
+
+    ;exit
+    mov rax, 60
+    mov rdx, 0
+    syscall
+
+    ;helper function for computeHex if digit is > 9 we need to add the corresponding letter
+    addLetter:
+        add al, 87 ;convert to ascii
+        mov [rsi], al ;write byte
+        cmp rcx, 0
+        jg computeHex ;if reamining digits iterate again
+        jmp printHex;otherwise print hex
