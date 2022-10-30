@@ -1,2 +1,2 @@
 # CS47
-Assignments from CS47 SJSU from Fall 2020
+Assignments from CS47 SJSU from Spring 2021
